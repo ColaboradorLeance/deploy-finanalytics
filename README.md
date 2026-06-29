@@ -44,18 +44,8 @@ cp .env.example .env
 
 Abra o arquivo `.env` e preencha os campos. Veja a seção **Referência completa do .env** abaixo.
 
-### 3. Autenticar no registro de imagens
 
-O sistema usa uma imagem privada hospedada no GitHub Container Registry (GHCR).
-Você precisa de um token de acesso fornecido pela Finanalytics.
-
-```bash
-echo SEU_TOKEN_AQUI | docker login ghcr.io -u ColaboradorLeance --password-stdin
-```
-
-> Só precisa fazer isso uma vez por máquina.
-
-### 4. Subir o sistema
+### 3. Subir o sistema
 
 ```bash
 docker compose up -d
@@ -69,7 +59,7 @@ O Docker vai executar automaticamente, nesta ordem:
 4. Iniciar a aplicação
 5. Iniciar o proxy nginx
 
-### 5. Verificar se está funcionando
+### 4. Verificar se está funcionando
 
 ```bash
 curl http://localhost:3000/api/health
