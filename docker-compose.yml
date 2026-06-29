@@ -29,11 +29,11 @@ services:
     working_dir: /app
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-    command: sh -c "npm install --silent drizzle-kit && npx drizzle-kit migrate"
+    command: sh -c "npm install --silent drizzle-kit drizzle-orm pg && npx drizzle-kit migrate"
 
   # ── Aplicação ──────────────────────────────────────────────────────────────
   app:
-    image: ghcr.io/colaboradorleance/finanalytics:latest
+    image: ghcr.io/colaboradorleance/finanalytics:dev
     restart: unless-stopped
     depends_on:
       db:
