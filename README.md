@@ -1,37 +1,33 @@
-<<<<<<< HEAD
-# Deploy — Guia de Operação
+# FinAnalytics — Guia de Deploy
 
-## 1. Pré-requisitos
-
-| Requisito | Versão mínima | Notas |
-|---|---|---|
-| Docker | 24.0 | `docker --version` |
-| PostgreSQL | 14 | Banco provisionado e acessível a partir do container |
-| Conta Anthropic | — | Créditos disponíveis em [console.anthropic.com](https://console.anthropic.com). O cliente é responsável pelos custos de uso diretamente com a Anthropic. |
-| Langfuse | — | Opcional. Requer acesso à internet se `LANGFUSE_ENABLED=true`. Em ambientes sem internet, defina `LANGFUSE_ENABLED=false`. |
+Este repositório contém tudo que é necessário para subir o sistema FinAnalytics em qualquer servidor.
+Não há código-fonte aqui — apenas configuração de infraestrutura.
 
 ---
 
-## 2. Configuração das variáveis de ambiente
-=======
-# FinAnalytics — Deploy
+## O que está incluído
 
-Repositório de implantação do sistema FinAnalytics.  
-Contém apenas os arquivos necessários para subir o sistema em produção — sem código-fonte.
+| Arquivo/Pasta | Função |
+|---------------|--------|
+| `docker-compose.yml` | Orquestra banco, migrations e aplicação |
+| `nginx/default.conf` | Proxy reverso interno (necessário para login funcionar) |
+| `migrations/` | Scripts SQL de criação e atualização do banco |
+| `drizzle.config.js` | Configuração do runner de migrations |
+| `.env.example` | Modelo das variáveis de ambiente |
 
 ---
 
 ## Pré-requisitos
 
-| Requisito | Versão mínima |
-|-----------|---------------|
-| Docker | 24.0 |
-| Docker Compose | 2.20 |
-| Acesso à internet | Para puxar a imagem do GHCR e conectar à Anthropic |
+| Requisito | Versão mínima | Como verificar |
+|-----------|---------------|----------------|
+| Docker | 24.0 | `docker --version` |
+| Docker Compose | 2.20 | `docker compose version` |
+| Acesso à internet | — | Para baixar a imagem e conectar à Anthropic |
 
 ---
 
-## Instalação
+## Instalação passo a passo
 
 ### 1. Clonar este repositório
 
@@ -40,68 +36,24 @@ git clone https://github.com/ColaboradorLeance/deploy-finanalytics.git
 cd deploy-finanalytics
 ```
 
-### 2. Configurar variáveis de ambiente
->>>>>>> 3d48de3 (feat: repositório de deploy completo e funcional)
+### 2. Criar o arquivo de configuração
 
 ```bash
 cp .env.example .env
 ```
 
-<<<<<<< HEAD
-Edite `.env` e preencha os campos obrigatórios:
+Abra o arquivo `.env` e preencha os campos. Veja a seção **Referência completa do .env** abaixo.
 
-- `DATABASE_URL` — string de conexão PostgreSQL
-- `SESSION_SECRET` — string aleatória segura (min. 32 caracteres); gere com:
-  ```bash
-  openssl rand -base64 48
-  ```
-- `ANTHROPIC_API_KEY` — chave da API Anthropic
+### 3. Autenticar no registro de imagens
 
-> **Importante:** Nunca commite o arquivo `.env`. Ele está no `.gitignore`.
-
----
-
-## 2.1 Aplicar migrações de banco de dados
-
-**Obrigatório antes da primeira execução** — ou ao atualizar para uma versão com novas migrações.
+O sistema usa uma imagem privada hospedada no GitHub Container Registry (GHCR).
+Você precisa de um token de acesso fornecido pela Finanalytics.
 
 ```bash
-docker run --rm \
-  --network <rede-do-postgres> \
-  -v "$(pwd):/app" \
-  -w /app \
-  -e DATABASE_URL="postgresql://user:password@db-host:5432/dbname" \
-  node:20-slim \
-  sh -c "npx drizzle-kit migrate"
+echo SEU_TOKEN_AQUI | docker login ghcr.io -u ColaboradorLeance --password-stdin
 ```
 
-Substitua `<rede-do-postgres>` pela rede Docker onde o banco está acessível, e `DATABASE_URL` pelas credenciais reais. O comando é idempotente — pode ser executado em todas as atualizações com segurança.
-
-> **Atenção:** Nunca execute `db:push` apontando para o banco de produção. Use sempre `drizzle-kit migrate` com os arquivos de `migrations/`.
-
----
-
-## 2.2 Requisito: HTTPS em produção
-
-A aplicação usa cookies de sessão com `Secure: true` e `SameSite: None`. Isso significa que o login e a autenticação só funcionam via **HTTPS**.
-
-Configure um proxy reverso (nginx, Traefik, Caddy) que termine TLS e repasse `X-Forwarded-Proto: https` ao container. Exemplo mínimo com nginx:
-=======
-Edite o arquivo `.env` e preencha obrigatoriamente:
-
-| Variável | Descrição |
-|----------|-----------|
-| `DB_PASSWORD` | Senha do banco de dados (crie uma senha forte) |
-| `SESSION_SECRET` | String aleatória longa — gere com `openssl rand -base64 48` |
-| `ANTHROPIC_API_KEY` | Chave da API Anthropic (console.anthropic.com) |
-| `FRONTEND_URL` | URL pública do sistema, ex: `https://app.seudominio.com` |
-
-### 3. (Primeira vez) Autenticar no registro de imagens
-
-```bash
-# Solicite o token de acesso à Finanalytics
-echo SEU_TOKEN | docker login ghcr.io -u ColaboradorLeance --password-stdin
-```
+> Só precisa fazer isso uma vez por máquina.
 
 ### 4. Subir o sistema
 
@@ -109,179 +61,241 @@ echo SEU_TOKEN | docker login ghcr.io -u ColaboradorLeance --password-stdin
 docker compose up -d
 ```
 
-O Docker vai:
-1. Baixar a imagem da aplicação
-2. Subir o banco de dados PostgreSQL
-3. Aplicar as migrations automaticamente
-4. Iniciar a aplicação
+O Docker vai executar automaticamente, nesta ordem:
 
-### 5. Verificar
+1. Iniciar o banco de dados PostgreSQL
+2. Aguardar o banco estar pronto
+3. Aplicar todas as migrations de banco
+4. Iniciar a aplicação
+5. Iniciar o proxy nginx
+
+### 5. Verificar se está funcionando
 
 ```bash
 curl http://localhost:3000/api/health
-# {"status":"ok"}
 ```
+
+Resposta esperada:
+```json
+{"status":"ok"}
+```
+
+Acesse `http://localhost:3000` no navegador — a tela de login deve aparecer.
 
 ---
 
-## Atualização para nova versão
+## Referência completa do .env
 
-```bash
-# Baixa a nova imagem e reinicia apenas o app (banco não é afetado)
-docker compose pull app
-docker compose up -d app
+Copie o `.env.example` e preencha campo a campo:
+
+```env
+# Banco de dados
+DB_USER=finanalytics
+DB_PASSWORD=TROQUE_PARA_UMA_SENHA_FORTE
+DB_NAME=finanalytics
 ```
 
-Se a atualização incluir novas migrations:
-
-```bash
-# Atualiza o repositório de deploy primeiro
-git pull
-
-# Roda as migrations e reinicia
-docker compose run --rm migrate
-docker compose up -d app
+```env
+# Sessão — gere com: openssl rand -base64 48
+SESSION_SECRET=
 ```
+
+```env
+# Chave da API Anthropic — obtenha em console.anthropic.com
+# O uso de IA é cobrado diretamente na sua conta Anthropic
+ANTHROPIC_API_KEY=sk-ant-api03-...
+```
+
+```env
+# Porta exposta pelo sistema no servidor
+PORT=3000
+NODE_ENV=production
+```
+
+```env
+# URL pública do sistema (necessária para links de email e CORS)
+FRONTEND_URL=https://app.seudominio.com
+```
+
+```env
+# Email — necessário para convites e recuperação de senha
+SMTP_USER=
+SMTP_PASS=
+```
+
+```env
+# Observabilidade de IA — opcional
+LANGFUSE_ENABLED=false
+# LANGFUSE_PUBLIC_KEY=
+# LANGFUSE_SECRET_KEY=
+# LANGFUSE_BASE_URL=https://cloud.langfuse.com
+```
+
+```env
+# API setorial — fornecida pela Finanalytics se habilitada
+BEDROCK_NEWS_API_URL=
+```
+
+### Campos obrigatórios para o sistema funcionar
+
+| Campo | Obrigatório | Motivo |
+|-------|-------------|--------|
+| `DB_PASSWORD` | Sim | Sem senha, o banco não sobe |
+| `SESSION_SECRET` | Sim | Sem ele, sessões de login não funcionam |
+| `ANTHROPIC_API_KEY` | Sim | Sem ela, todas as funções de IA falham |
+| `FRONTEND_URL` | Sim | Necessário para CORS e links de email |
+| `SMTP_USER` / `SMTP_PASS` | Só se usar email | Convites e recuperação de senha |
+
+> **Atenção:** Nunca commit o arquivo `.env`. Ele já está no `.gitignore` e contém segredos.
 
 ---
 
-## Observações importantes
+## Por que o login exige HTTPS em produção
 
-### HTTPS obrigatório
+O sistema usa cookies de sessão com `Secure: true`. Isso significa que o navegador só envia o cookie via HTTPS — em HTTP puro, o login parece funcionar mas a sessão some na próxima requisição.
 
-O sistema usa cookies com `Secure: true`. O login **não funciona via HTTP puro**.  
-Configure um proxy reverso (nginx, Traefik, Caddy) com certificado SSL antes de colocar em produção.
+**Em ambiente local** (mesma máquina, `localhost`), isso já está resolvido: o nginx incluído no `docker-compose.yml` injeta o header `X-Forwarded-Proto: https`, enganando o sistema para funcionar normalmente.
 
-Exemplo mínimo com nginx:
->>>>>>> 3d48de3 (feat: repositório de deploy completo e funcional)
+**Em produção** (servidor real com domínio), você precisa de um proxy reverso com certificado SSL na frente. Exemplo com nginx externo:
 
 ```nginx
 server {
     listen 443 ssl;
     server_name app.seudominio.com;
 
-    ssl_certificate     /etc/ssl/certs/cert.pem;
-    ssl_certificate_key /etc/ssl/private/key.pem;
+    ssl_certificate     /caminho/para/cert.pem;
+    ssl_certificate_key /caminho/para/key.pem;
 
     location / {
         proxy_pass         http://localhost:3000;
-        proxy_set_header   Host $host;
-<<<<<<< HEAD
-        proxy_set_header   X-Real-IP $remote_addr;
-=======
->>>>>>> 3d48de3 (feat: repositório de deploy completo e funcional)
-        proxy_set_header   X-Forwarded-Proto https;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   Host               $host;
+        proxy_set_header   X-Real-IP          $remote_addr;
+        proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto  https;
+        proxy_read_timeout 300s;
     }
 }
 ```
 
-<<<<<<< HEAD
----
-
-## 3. Build da imagem
-
-```bash
-docker build -t finanalytics:latest .
-```
-
-O build é multi-stage. O stage final não contém código-fonte, dependências de desenvolvimento, nem arquivos de configuração sensíveis.
-
-Para gerar uma tag versionada:
-
-```bash
-docker build -t finanalytics:1.0.0 .
-=======
-### Billing Anthropic
-
-O uso de IA é cobrado **diretamente na sua conta Anthropic**.  
-A Finanalytics não intermedia nem controla esse custo.
-
-### Dados persistidos
-
-Os dados do banco ficam no volume Docker `postgres_data`.  
-Para backup:
-
-```bash
-docker exec deploy-finanalytics-db-1 pg_dump -U finanalytics finanalytics > backup.sql
->>>>>>> 3d48de3 (feat: repositório de deploy completo e funcional)
-```
+Alternativas mais simples: **Caddy** (gera certificado automaticamente) ou **Traefik**.
 
 ---
 
-<<<<<<< HEAD
-## 4. Executar o container
+## Atualizar para uma nova versão
+
+Quando a Finanalytics lançar uma nova versão:
 
 ```bash
-docker run -d \
-  --name finanalytics \
-  --env-file .env \
-  -p 3000:3000 \
-  --restart unless-stopped \
-  finanalytics:latest
+# 1. Atualizar este repositório (pode ter novas migrations ou configs)
+git pull
+
+# 2. Baixar a nova imagem
+docker compose pull app
+
+# 3. Reiniciar somente a aplicação (banco não é afetado)
+docker compose up -d app
 ```
 
-> **Regra:** Sempre use `--env-file .env`. Nunca passe segredos via `-e KEY=valor` inline — isso os expõe no histórico do shell e em `docker inspect`.
+> Se o `git pull` trouxer novos arquivos em `migrations/`, as migrations são aplicadas automaticamente quando o compose sobe.
 
 ---
 
-## 5. Verificação
+## Backup e restauração
 
-**Healthcheck:**
-
-```bash
-curl -f http://localhost:3000/api/health
-# Resposta esperada: {"status":"ok"}
-```
-
-**Logs esperados na inicialização:**
-
-```
-[Observability] Langfuse tracing iniciado          ← se LANGFUSE_ENABLED=true
-[Observability] Langfuse tracing desabilitado      ← se LANGFUSE_ENABLED=false
-```
-
-**Status do container:**
+### Fazer backup do banco
 
 ```bash
-docker ps -f name=finanalytics
-docker logs finanalytics --tail 50
+docker exec deploy-finanalytics-db-1 \
+  pg_dump -U finanalytics finanalytics \
+  > backup-$(date +%Y%m%d).sql
+```
+
+### Restaurar backup
+
+```bash
+# Atenção: isso sobrescreve os dados atuais
+docker exec -i deploy-finanalytics-db-1 \
+  psql -U finanalytics finanalytics \
+  < backup-20260101.sql
 ```
 
 ---
 
-## 6. Atualização e encerramento gracioso
-
-**Atualizar para nova versão:**
+## Comandos úteis do dia a dia
 
 ```bash
-docker build -t finanalytics:latest .
-docker stop finanalytics
-docker rm finanalytics
-docker run -d --name finanalytics --env-file .env -p 3000:3000 --restart unless-stopped finanalytics:latest
-```
-
-**Encerramento gracioso** (aguarda flush de traces e conexões em aberto):
-
-```bash
-docker stop --time 30 finanalytics
-```
-
-O processo responde a `SIGTERM` com shutdown ordenado. O timeout padrão do Docker é 10 s; recomendamos 30 s para garantir o flush de telemetria pendente.
-=======
-## Comandos úteis
-
-```bash
-# Ver logs da aplicação
+# Ver logs em tempo real
 docker compose logs app -f
 
+# Ver somente os últimos 100 linhas de log
+docker compose logs app --tail 100
+
+# Ver status de todos os containers
+docker compose ps
+
+# Reiniciar somente a aplicação (sem derrubar o banco)
+docker compose restart app
+
+# Parar tudo sem apagar dados
+docker compose down
+
+# Parar e apagar TUDO incluindo banco — CUIDADO, dados são perdidos
+docker compose down -v
+```
+
+---
+
+## Solução de problemas comuns
+
+### Login não funciona / sessão some
+
+O navegador não está enviando o cookie de sessão. Causas:
+
+1. **Em produção sem HTTPS:** configure um proxy com SSL (ver seção acima)
+2. **Cookie bloqueado por navegador:** verifique se `FRONTEND_URL` corresponde exatamente à URL que você acessa
+
+### Funções de IA retornam erro 401
+
+A `ANTHROPIC_API_KEY` está inválida ou com problema:
+
+1. Acesse [console.anthropic.com](https://console.anthropic.com) → API Keys
+2. Confirme que a chave existe e está ativa
+3. Verifique se a conta tem créditos disponíveis
+4. Edite o `.env`, corrija a chave e reinicie: `docker compose up -d app`
+
+> **Atenção:** Se o `.env` foi editado no Windows (Notepad, por exemplo), pode ter caracteres invisíveis `\r` no final das linhas. Isso corrompem a chave. Use um editor como VS Code, ou converta com: `sed -i 's/\r//' .env`
+
+### Banco não conecta na primeira vez
+
+```bash
+# Ver logs do banco
+docker compose logs db
+
+# Forçar reinício do banco
+docker compose restart db
+```
+
+Se o banco estiver com dados corrompidos de uma tentativa anterior:
+
+```bash
+docker compose down -v   # apaga tudo
+docker compose up -d     # recria do zero
+```
+
+### Migrations falham
+
+```bash
 # Ver logs das migrations
 docker compose logs migrate
 
-# Parar tudo
-docker compose down
-
-# Parar e apagar o banco (DESTRUTIVO)
-docker compose down -v
+# Rodar migrations manualmente
+docker compose run --rm migrate
 ```
->>>>>>> 3d48de3 (feat: repositório de deploy completo e funcional)
+
+---
+
+## Notas importantes
+
+- **Billing Anthropic:** o uso de IA (análises, extração, notícias) é cobrado diretamente na sua conta Anthropic. A Finanalytics não intermedia nem controla esse custo.
+- **Dados do banco:** ficam no volume Docker `postgres_data`. Enquanto você não rodar `docker compose down -v`, os dados são preservados entre reinicializações.
+- **Segredos:** nunca compartilhe o arquivo `.env`. Trate `SESSION_SECRET` e `ANTHROPIC_API_KEY` como senhas.
