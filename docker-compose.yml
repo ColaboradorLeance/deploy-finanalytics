@@ -1,4 +1,6 @@
 services:
+
+  # ── Banco de dados ─────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -14,34 +16,37 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
-    image: ghcr.io/ferezinini/finanalytics:latest   # ← puxa do GHCR
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    environment:
-      # Sobrescreve DATABASE_URL usando as vars do .env para apontar para o db interno
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-
-  # Executa as migrations ANTES de subir o app (roda e sai)
+  # ── Migrations (roda uma vez e sai) ────────────────────────────────────────
   migrate:
     image: node:20-slim
+    restart: "no"
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./migrations:/app/migrations
-      - ./drizzle.config.minimal.ts:/app/drizzle.config.ts
-      - ./package-migrate.json:/app/package.json
+      - ./drizzle.config.js:/app/drizzle.config.js
     working_dir: /app
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-    command: sh -c "npm install --silent && npx drizzle-kit migrate"
+    command: sh -c "npm install --silent drizzle-kit && npx drizzle-kit migrate"
+
+  # ── Aplicação ──────────────────────────────────────────────────────────────
+  app:
+    image: ghcr.io/colaboradorleance/finanalytics:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      PORT: "3000"
 
 volumes:
   postgres_data:
