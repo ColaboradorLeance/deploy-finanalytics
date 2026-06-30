@@ -16,6 +16,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Migrations (roda uma vez e sai) ────────────────────────────────────────
+  migrate:
+    image: node:20-slim
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/app/migrations
+      - ./drizzle.config.js:/app/drizzle.config.js
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    command: sh -c "npm install --silent drizzle-kit drizzle-orm pg && npx drizzle-kit migrate"
+
   # ── Aplicação ──────────────────────────────────────────────────────────────
   app:
     image: ghcr.io/colaboradorleance/finanalytics:dev
@@ -23,6 +38,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     environment:

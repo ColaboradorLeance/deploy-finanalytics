@@ -1,0 +1,1 @@
+ALTER TABLE "subscription_plans" ADD COLUMN "included_tasks" jsonb DEFAULT '{"extraction":true,"financial_analysis":true,"sector_analysis":true,"integrated_analysis":true}'::jsonb NOT NULL;
