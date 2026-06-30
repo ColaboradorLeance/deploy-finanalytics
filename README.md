@@ -99,19 +99,18 @@ CLIENT_ADMIN_PASSWORD=troque_esta_senha_no_primeiro_acesso
 ```
 
 ```env
-# Chaves da API Anthropic — obtenha em console.anthropic.com
+# Chave da API Anthropic — obtenha em console.anthropic.com
 # O uso de IA é cobrado diretamente na sua conta Anthropic
-ANTHROPIC_API_KEY_EXTRACTION=sk-ant-...
-ANTHROPIC_API_KEY_ANALYSIS=sk-ant-...
-ANTHROPIC_API_KEY_SECTOR=sk-ant-...
-ANTHROPIC_API_KEY_INTEGRATED_ANALYSIS=sk-ant-...
-ANTHROPIC_API_KEY_SEARCH_NEWS=sk-ant-...
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ```env
 # Porta exposta pelo sistema no servidor
 PORT=3000
 NODE_ENV=production
+
+# Documentação da API — descomente para habilitar /api/docs
+# DOCS_ENABLED=true
 ```
 
 ```env
@@ -141,7 +140,7 @@ LANGFUSE_ENABLED=false
 | `SESSION_SECRET` | Sim | Sem ele, sessões de login não funcionam |
 | `CLIENT_ADMIN_EMAIL` | Sim | Email do primeiro usuário administrador |
 | `CLIENT_ADMIN_PASSWORD` | Sim | Senha inicial do primeiro usuário |
-| `ANTHROPIC_API_KEY_*` | Sim | Sem elas, todas as funções de IA falham |
+| `ANTHROPIC_API_KEY` | Sim | Sem ela, todas as funções de IA falham |
 | `FRONTEND_URL` | Sim | Necessário para CORS e links de email |
 | `SMTP_USER` / `SMTP_PASS` | Só se usar email | Convites e recuperação de senha |
 
