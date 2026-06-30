@@ -121,11 +121,6 @@ LANGFUSE_ENABLED=false
 # LANGFUSE_BASE_URL=https://cloud.langfuse.com
 ```
 
-```env
-# API setorial — fornecida pela Finanalytics se habilitada
-BEDROCK_NEWS_API_URL=
-```
-
 ### Campos obrigatórios para o sistema funcionar
 
 | Campo | Obrigatório | Motivo |
