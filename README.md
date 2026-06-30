@@ -148,6 +148,18 @@ LANGFUSE_ENABLED=false
 
 ---
 
+## Gerar API key para integrações
+
+Para acessar a API programaticamente via `Authorization: Bearer fin_sk_...`:
+
+1. Acesse `http://localhost:3000` e faça login
+2. Clique no seu nome/perfil → **Minha Conta**
+3. Role até a seção **API Keys**
+4. Digite um nome para a chave e clique em **Gerar**
+5. **Copie a chave imediatamente** — ela não será exibida novamente
+
+---
+
 ## Primeiro acesso
 
 Na primeira inicialização, o sistema cria automaticamente um usuário com as credenciais definidas em `CLIENT_ADMIN_EMAIL` e `CLIENT_ADMIN_PASSWORD`.
