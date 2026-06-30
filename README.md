@@ -91,9 +91,21 @@ SESSION_SECRET=
 ```
 
 ```env
-# Chave da API Anthropic — obtenha em console.anthropic.com
+# Primeiro acesso — usuário administrador do cliente
+# Criado automaticamente na primeira inicialização.
+# Após entrar, troque a senha nas configurações do perfil.
+CLIENT_ADMIN_EMAIL=admin@suaempresa.com
+CLIENT_ADMIN_PASSWORD=troque_esta_senha_no_primeiro_acesso
+```
+
+```env
+# Chaves da API Anthropic — obtenha em console.anthropic.com
 # O uso de IA é cobrado diretamente na sua conta Anthropic
-ANTHROPIC_API_KEY=sk-ant-api03-...
+ANTHROPIC_API_KEY_EXTRACTION=sk-ant-...
+ANTHROPIC_API_KEY_ANALYSIS=sk-ant-...
+ANTHROPIC_API_KEY_SECTOR=sk-ant-...
+ANTHROPIC_API_KEY_INTEGRATED_ANALYSIS=sk-ant-...
+ANTHROPIC_API_KEY_SEARCH_NEWS=sk-ant-...
 ```
 
 ```env
@@ -127,11 +139,26 @@ LANGFUSE_ENABLED=false
 |-------|-------------|--------|
 | `DB_PASSWORD` | Sim | Sem senha, o banco não sobe |
 | `SESSION_SECRET` | Sim | Sem ele, sessões de login não funcionam |
-| `ANTHROPIC_API_KEY` | Sim | Sem ela, todas as funções de IA falham |
+| `CLIENT_ADMIN_EMAIL` | Sim | Email do primeiro usuário administrador |
+| `CLIENT_ADMIN_PASSWORD` | Sim | Senha inicial do primeiro usuário |
+| `ANTHROPIC_API_KEY_*` | Sim | Sem elas, todas as funções de IA falham |
 | `FRONTEND_URL` | Sim | Necessário para CORS e links de email |
 | `SMTP_USER` / `SMTP_PASS` | Só se usar email | Convites e recuperação de senha |
 
 > **Atenção:** Nunca commit o arquivo `.env`. Ele já está no `.gitignore` e contém segredos.
+
+---
+
+## Primeiro acesso
+
+Na primeira inicialização, o sistema cria automaticamente um usuário com as credenciais definidas em `CLIENT_ADMIN_EMAIL` e `CLIENT_ADMIN_PASSWORD`.
+
+1. Acesse `http://localhost:3000` (ou o domínio configurado)
+2. Entre com o email e senha definidos no `.env`
+3. **Troque a senha imediatamente** nas configurações do perfil
+4. A partir daí, você pode convidar outros usuários pelo painel de administração
+
+> Nas reinicializações seguintes o sistema detecta que o usuário já existe e não altera a senha — suas mudanças são preservadas.
 
 ---
 
