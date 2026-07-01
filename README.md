@@ -6,9 +6,10 @@ Instruções para rodar o sistema FinAnalytics usando a imagem Docker oficial.
 
 ## Imagem
 
-```
-ghcr.io/colaboradorleance/finanalytics:dev
-```
+| Tag | Quando usar |
+|-----|-------------|
+| `ghcr.io/colaboradorleance/finanalytics:latest` | Produção — publicada a cada release oficial |
+| `ghcr.io/colaboradorleance/finanalytics:latest` | Testes — build contínuo da branch de desenvolvimento |
 
 Porta exposta: **3000**
 
@@ -51,7 +52,7 @@ Execute **antes** de subir o app pela primeira vez. Repita a cada atualização 
 
 ```bash
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:dev \
+  ghcr.io/colaboradorleance/finanalytics:latest \
   dist/migrate.cjs
 ```
 
@@ -77,7 +78,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:dev
+  ghcr.io/colaboradorleance/finanalytics:latest
 ```
 
 ### 5. Verificar
@@ -107,7 +108,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:dev
+  ghcr.io/colaboradorleance/finanalytics:latest
 ```
 
 Acesse normalmente em `http://localhost:3000`.
@@ -138,7 +139,7 @@ Todas as variáveis ficam no arquivo `.env`. Copie o `.env.example` como ponto d
 | Variável | Padrão | Descrição |
 |----------|--------|-----------|
 | `PORT` | `3000` | Porta interna do app |
-| `NODE_ENV` | `production` | Ambiente de execução |
+| `SECURE_COOKIES` | `true` | `false` desabilita cookie Secure — use **apenas** em testes locais sem HTTPS |
 | `SMTP_USER` | — | Usuário SMTP para envio de emails |
 | `SMTP_PASS` | — | Senha SMTP |
 | `DOCS_ENABLED` | `false` | `true` habilita Swagger UI em `/api/docs` |
@@ -214,17 +215,17 @@ Para acessar a API com `Authorization: Bearer fin_sk_...`:
 
 ```bash
 # 1. Baixar nova imagem
-docker pull ghcr.io/colaboradorleance/finanalytics:dev
+docker pull ghcr.io/colaboradorleance/finanalytics:latest
 
 # 2. Aplicar novas migrations (se houver)
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:dev dist/migrate.cjs
+  ghcr.io/colaboradorleance/finanalytics:latest dist/migrate.cjs
 
 # 3. Reiniciar o container
 docker stop finanalytics
 docker rm finanalytics
 docker run -d --name finanalytics --restart unless-stopped -p 3000:3000 \
-  --env-file .env ghcr.io/colaboradorleance/finanalytics:dev
+  --env-file .env ghcr.io/colaboradorleance/finanalytics:latest
 ```
 
 ---
@@ -275,7 +276,12 @@ A `ANTHROPIC_API_KEY` está inválida:
 1. Acesse [console.anthropic.com](https://console.anthropic.com) → API Keys
 2. Confirme que a chave existe e está ativa
 3. Verifique se a conta tem créditos disponíveis
-4. Corrija no `.env` e reinicie: `docker restart finanalytics`
+4. Corrija no `.env` e recrie o container:
+```bash
+docker stop finanalytics && docker rm finanalytics
+docker run -d --name finanalytics --restart unless-stopped -p 3000:3000 \
+  --env-file .env ghcr.io/colaboradorleance/finanalytics:latest
+```
 
 > **Windows:** se o `.env` foi editado no Notepad, pode ter `\r` invisível corrompendo a chave. Use VS Code ou converta: `sed -i 's/\r//' .env`
 
@@ -294,7 +300,7 @@ Se não aparecer nada, `CLIENT_ADMIN_EMAIL` ou `CLIENT_ADMIN_PASSWORD` não est�
 ```bash
 # Ver erro completo
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:dev dist/migrate.cjs
+  ghcr.io/colaboradorleance/finanalytics:latest dist/migrate.cjs
 ```
 
 > O runner detecta automaticamente bancos que foram configurados anteriormente pelo drizzle-kit e não tenta re-aplicar migrations já existentes.
