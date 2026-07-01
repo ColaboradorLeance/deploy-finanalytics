@@ -21,6 +21,8 @@ Porta exposta: **3000**
 - Proxy reverso com HTTPS na frente do sistema (nginx, Traefik, Caddy…)
 - Token de acesso à imagem — solicite à Finanalytics
 
+> **Windows (PowerShell):** os comandos abaixo usam `\` para quebrar linhas (sintaxe Linux/bash). No PowerShell substitua `\` por `` ` `` (backtick), ou escreva o comando inteiro em uma linha.
+
 ---
 
 ## Instalação
@@ -48,19 +50,18 @@ Ou crie manualmente com base na seção [Variáveis de ambiente](#variáveis-de-
 Execute **antes** de subir o app pela primeira vez. Repita a cada atualização com novas migrations:
 
 ```bash
-docker run --rm \
-  -e DATABASE_URL="postgresql://usuario:senha@host:5432/banco" \
+docker run --rm --env-file .env \
   ghcr.io/colaboradorleance/finanalytics:latest \
   dist/migrate.cjs
 ```
 
-Saída esperada:
+Saída esperada (banco novo):
 ```
 [migrate] Conectado ao banco.
 [migrate] Aplicando 0000_violet_rhino...
 [migrate] ✓ 0000_violet_rhino
 ...
-[migrate] 10 migration(s) aplicada(s) com sucesso.
+[migrate] N migration(s) aplicada(s) com sucesso.
 ```
 
 Se executar novamente sem novas migrations:
@@ -261,6 +262,8 @@ Se não aparecer nada, `CLIENT_ADMIN_EMAIL` ou `CLIENT_ADMIN_PASSWORD` não est�
 docker run --rm --env-file .env \
   ghcr.io/colaboradorleance/finanalytics:latest dist/migrate.cjs
 ```
+
+> O runner detecta automaticamente bancos que foram configurados anteriormente pelo drizzle-kit e não tenta re-aplicar migrations já existentes.
 
 ---
 
