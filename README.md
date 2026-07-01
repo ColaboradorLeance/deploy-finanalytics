@@ -89,6 +89,51 @@ curl http://localhost:3000/api/health
 
 ---
 
+## Teste local sem SSL
+
+Em produção o sistema exige HTTPS (cookie `Secure`). Para testar localmente sem certificado, use o nginx proxy incluído neste repositório — ele adiciona o header `X-Forwarded-Proto: https` que o app usa para liberar o cookie:
+
+**1. Suba o proxy nginx na porta 8080:**
+
+```bash
+docker run -d \
+  --name finanalytics-proxy \
+  -p 8080:80 \
+  -v "$(pwd)/nginx-local.conf:/etc/nginx/conf.d/default.conf" \
+  nginx:alpine
+```
+
+> **PowerShell:** substitua `$(pwd)` por `${PWD}` e `\` por `` ` ``
+
+**2. Configure o `.env`:**
+
+```env
+NODE_ENV=development
+FRONTEND_URL=http://localhost:8080
+```
+
+**3. Recrie o container da aplicação** (para pegar as novas variáveis):
+
+```bash
+docker stop finanalytics && docker rm finanalytics
+docker run -d \
+  --name finanalytics \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  --env-file .env \
+  ghcr.io/colaboradorleance/finanalytics:dev
+```
+
+**4. Acesse via proxy** (não direto na porta 3000):
+
+```
+http://localhost:8080
+```
+
+> Este proxy é **apenas para testes locais**. Em produção, use nginx/Caddy/Traefik com SSL real.
+
+---
+
 ## Variáveis de ambiente
 
 Todas as variáveis ficam no arquivo `.env`. Copie o `.env.example` como ponto de partida.
@@ -228,11 +273,17 @@ docker rm finanalytics
 
 ### Login não funciona / sessão some
 
-O browser está rejeitando o cookie. Causas:
+O browser está rejeitando o cookie de sessão. Verifique:
 
+**Em produção:**
 - Proxy reverso não envia `X-Forwarded-Proto: https` → adicione o header
 - Acessando via HTTP puro → configure SSL no proxy
 - `FRONTEND_URL` diferente da URL do browser → corrija para a URL exata que você acessa
+
+**Em teste local:**
+- Não acesse direto em `localhost:3000` — use o proxy nginx na porta 8080 (ver seção [Teste local sem SSL](#teste-local-sem-ssl))
+- Confirme que `NODE_ENV=development` e `FRONTEND_URL=http://localhost:8080` estão no `.env`
+- Recrie o container após mudar o `.env` (`docker stop` → `docker rm` → `docker run`). `docker restart` não relê o `.env`.
 
 ### Funções de IA retornam erro 401
 
