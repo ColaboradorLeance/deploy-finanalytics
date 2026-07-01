@@ -5,6 +5,100 @@ Não há código-fonte aqui — apenas configuração de infraestrutura.
 
 ---
 
+## Escolha sua forma de deploy
+
+| Cenário | Use |
+|---------|-----|
+| Servidor simples / primeiro uso | [Docker Compose](#instalação-com-docker-compose) — banco incluso, tudo configurado |
+| Kubernetes / infraestrutura própria / banco externo | [Somente a imagem](#usando-somente-a-imagem) — integre na sua stack |
+
+---
+
+## Usando somente a imagem
+
+Para quem já tem banco de dados, proxy reverso e quer integrar o container na própria infraestrutura.
+
+### Imagem
+
+```
+ghcr.io/colaboradorleance/finanalytics:latest
+```
+
+> Para autenticar no registro: `echo SEU_TOKEN | docker login ghcr.io -u ColaboradorLeance --password-stdin`
+
+### Porta exposta
+
+O container expõe a porta `3000`.
+
+### Variáveis de ambiente obrigatórias
+
+| Variável | Descrição |
+|----------|-----------|
+| `DATABASE_URL` | `postgresql://user:senha@host:5432/dbname` |
+| `SESSION_SECRET` | String aleatória longa (mín. 48 chars) — `openssl rand -base64 48` |
+| `CLIENT_ADMIN_EMAIL` | Email do primeiro usuário admin (criado na 1ª inicialização) |
+| `CLIENT_ADMIN_PASSWORD` | Senha inicial do primeiro usuário admin |
+| `ANTHROPIC_API_KEY` | Chave da API Anthropic (console.anthropic.com) |
+| `FRONTEND_URL` | URL pública do sistema, ex: `https://app.seudominio.com` |
+
+Variáveis opcionais: `PORT` (padrão `3000`), `SMTP_USER`, `SMTP_PASS`, `LANGFUSE_ENABLED`, `BEDROCK_NEWS_API_URL`.
+
+### Passo 1 — Aplicar migrations
+
+Execute **antes** de subir o container pela primeira vez (e a cada atualização com novas migrations):
+
+```bash
+docker run --rm \
+  -e DATABASE_URL="postgresql://user:senha@host:5432/dbname" \
+  ghcr.io/colaboradorleance/finanalytics:latest \
+  dist/migrate.cjs
+```
+
+### Passo 2 — Rodar o container
+
+```bash
+docker run -d \
+  --name finanalytics \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:senha@host:5432/dbname" \
+  -e SESSION_SECRET="sua_session_secret_aqui" \
+  -e CLIENT_ADMIN_EMAIL="admin@suaempresa.com" \
+  -e CLIENT_ADMIN_PASSWORD="SuaSenhaForte123" \
+  -e ANTHROPIC_API_KEY="sk-ant-api03-..." \
+  -e FRONTEND_URL="https://app.seudominio.com" \
+  ghcr.io/colaboradorleance/finanalytics:latest
+```
+
+### Requisito importante — header X-Forwarded-Proto
+
+O sistema usa cookies com `Secure: true`. Seu proxy reverso **precisa** enviar o header:
+
+```
+X-Forwarded-Proto: https
+```
+
+Sem esse header, o login não funciona. Exemplo para nginx:
+
+```nginx
+location / {
+    proxy_pass         http://localhost:3000;
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto https;
+    proxy_read_timeout 300s;
+}
+```
+
+### Verificar
+
+```bash
+curl http://localhost:3000/api/health
+# {"status":"ok"}
+```
+
+---
+
 ## O que está incluído
 
 | Arquivo/Pasta | Função |
