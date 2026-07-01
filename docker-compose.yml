@@ -18,22 +18,18 @@ services:
 
   # ── Migrations (roda uma vez e sai) ────────────────────────────────────────
   migrate:
-    image: node:20-slim
+    image: ghcr.io/colaboradorleance/finanalytics:latest
     restart: "no"
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./migrations:/app/migrations
-      - ./drizzle.config.js:/app/drizzle.config.js
-    working_dir: /app
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-    command: sh -c "npm install --silent drizzle-kit drizzle-orm pg && npx drizzle-kit migrate"
+    command: ["dist/migrate.cjs"]
 
   # ── Aplicação ──────────────────────────────────────────────────────────────
   app:
-    image: ghcr.io/colaboradorleance/finanalytics:dev
+    image: ghcr.io/colaboradorleance/finanalytics:latest
     restart: unless-stopped
     depends_on:
       db:
@@ -46,7 +42,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       PORT: "3000"
 
-  # ── Proxy reverso (resolve cookie Secure em HTTP local) ────────────────────
+  # ── Proxy reverso (injeta X-Forwarded-Proto para cookies funcionarem) ──────
   proxy:
     image: nginx:alpine
     restart: unless-stopped
