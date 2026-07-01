@@ -7,7 +7,7 @@ Instruções para rodar o sistema FinAnalytics usando a imagem Docker oficial.
 ## Imagem
 
 ```
-ghcr.io/colaboradorleance/finanalytics:latest
+ghcr.io/colaboradorleance/finanalytics:dev
 ```
 
 Porta exposta: **3000**
@@ -51,7 +51,7 @@ Execute **antes** de subir o app pela primeira vez. Repita a cada atualização 
 
 ```bash
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:latest \
+  ghcr.io/colaboradorleance/finanalytics:dev \
   dist/migrate.cjs
 ```
 
@@ -77,7 +77,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:latest
+  ghcr.io/colaboradorleance/finanalytics:dev
 ```
 
 ### 5. Verificar
@@ -185,17 +185,17 @@ Para acessar a API com `Authorization: Bearer fin_sk_...`:
 
 ```bash
 # 1. Baixar nova imagem
-docker pull ghcr.io/colaboradorleance/finanalytics:latest
+docker pull ghcr.io/colaboradorleance/finanalytics:dev
 
 # 2. Aplicar novas migrations (se houver)
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:latest dist/migrate.cjs
+  ghcr.io/colaboradorleance/finanalytics:dev dist/migrate.cjs
 
 # 3. Reiniciar o container
 docker stop finanalytics
 docker rm finanalytics
 docker run -d --name finanalytics --restart unless-stopped -p 3000:3000 \
-  --env-file .env ghcr.io/colaboradorleance/finanalytics:latest
+  --env-file .env ghcr.io/colaboradorleance/finanalytics:dev
 ```
 
 ---
@@ -260,7 +260,7 @@ Se não aparecer nada, `CLIENT_ADMIN_EMAIL` ou `CLIENT_ADMIN_PASSWORD` não est�
 ```bash
 # Ver erro completo
 docker run --rm --env-file .env \
-  ghcr.io/colaboradorleance/finanalytics:latest dist/migrate.cjs
+  ghcr.io/colaboradorleance/finanalytics:dev dist/migrate.cjs
 ```
 
 > O runner detecta automaticamente bancos que foram configurados anteriormente pelo drizzle-kit e não tenta re-aplicar migrations já existentes.
